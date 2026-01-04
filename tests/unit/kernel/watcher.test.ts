@@ -20,6 +20,7 @@ describe('ConfigFileWatcher', () => {
   let fsWatch: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     mockWatcherInstance.close.mockClear();
 
@@ -31,6 +32,7 @@ describe('ConfigFileWatcher', () => {
 
   afterEach(() => {
     watcher.close();
+    vi.useRealTimers();
   });
 
   describe('watch', () => {
@@ -84,7 +86,7 @@ describe('ConfigFileWatcher', () => {
       expect(() => watcher.unwatch('/nonexistent')).not.toThrow();
     });
 
-    it('should clear debounce timer when unwatching', async () => {
+    it('should clear debounce timer when unwatching', () => {
       const callback = vi.fn();
       watcher.watch('/path/to/file.yaml', callback);
 
@@ -95,8 +97,8 @@ describe('ConfigFileWatcher', () => {
       // Unwatch should clear the timer
       watcher.unwatch('/path/to/file.yaml');
 
-      // Wait for potential debounce period
-      await new Promise(resolve => setTimeout(resolve, 400));
+      // Advance timers past debounce period
+      vi.advanceTimersByTime(400);
 
       // Callback should not have been called because timer was cleared
       expect(callback).not.toHaveBeenCalled();
@@ -131,7 +133,7 @@ describe('ConfigFileWatcher', () => {
   });
 
   describe('handleFileChange', () => {
-    it('should debounce change events', async () => {
+    it('should debounce change events', () => {
       const callback = vi.fn();
       watcher.watch('/path/to/file.yaml', callback);
 
@@ -143,21 +145,21 @@ describe('ConfigFileWatcher', () => {
       watchCallback('change', 'file.yaml');
       watchCallback('change', 'file.yaml');
 
-      // Wait for debounce (300ms + buffer)
-      await new Promise(resolve => setTimeout(resolve, 400));
+      // Advance timers past debounce period
+      vi.advanceTimersByTime(400);
 
       // Should only be called once due to debouncing
       expect(callback).toHaveBeenCalledTimes(1);
     });
 
-    it('should map change event type correctly', async () => {
+    it('should map change event type correctly', () => {
       const callback = vi.fn();
       watcher.watch('/path/to/file.yaml', callback);
 
       const watchCallback = fsWatch.mock.calls[0][1];
       watchCallback('change', 'file.yaml');
 
-      await new Promise(resolve => setTimeout(resolve, 400));
+      vi.advanceTimersByTime(400);
 
       expect(callback).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -167,14 +169,14 @@ describe('ConfigFileWatcher', () => {
       );
     });
 
-    it('should map rename event type correctly', async () => {
+    it('should map rename event type correctly', () => {
       const callback = vi.fn();
       watcher.watch('/path/to/file.yaml', callback);
 
       const watchCallback = fsWatch.mock.calls[0][1];
       watchCallback('rename', 'file.yaml');
 
-      await new Promise(resolve => setTimeout(resolve, 400));
+      vi.advanceTimersByTime(400);
 
       expect(callback).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -184,7 +186,7 @@ describe('ConfigFileWatcher', () => {
       );
     });
 
-    it('should include timestamp and metadata in event', async () => {
+    it('should include timestamp and metadata in event', () => {
       const callback = vi.fn();
       watcher.watch('/path/to/file.yaml', callback);
 
@@ -192,14 +194,14 @@ describe('ConfigFileWatcher', () => {
       const beforeTime = Date.now();
       watchCallback('change', 'file.yaml');
 
-      await new Promise(resolve => setTimeout(resolve, 400));
+      vi.advanceTimersByTime(400);
 
       const event = callback.mock.calls[0][0];
       expect(event.timestamp).toBeGreaterThanOrEqual(beforeTime);
       expect(event.metadata).toEqual({ originalEvent: 'change' });
     });
 
-    it('should catch and log errors in callback', async () => {
+    it('should catch and log errors in callback', () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const errorCallback = () => {
@@ -211,7 +213,7 @@ describe('ConfigFileWatcher', () => {
       const watchCallback = fsWatch.mock.calls[0][1];
       watchCallback('change', 'file.yaml');
 
-      await new Promise(resolve => setTimeout(resolve, 400));
+      vi.advanceTimersByTime(400);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Error in file watch callback:',
