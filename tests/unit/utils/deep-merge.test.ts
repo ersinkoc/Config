@@ -28,6 +28,13 @@ describe('Deep Merge Utilities', () => {
     it('should return merge when no strategies', () => {
       expect(selectStrategy('path', undefined)).toBe('merge');
     });
+
+    it('should handle undefined path strategy', () => {
+      const strategies = {
+        paths: { 'other.path': 'replace' as const },
+      };
+      expect(selectStrategy('missing.path', strategies)).toBe('merge');
+    });
   });
 
   describe('mergeArrays', () => {
@@ -45,6 +52,19 @@ describe('Deep Merge Utilities', () => {
 
     it('should merge arrays with unique values', () => {
       expect(mergeArrays([1, 2], [2, 3], 'unique')).toEqual([1, 2, 3]);
+    });
+
+    it('should handle unique with objects', () => {
+      const result = mergeArrays(
+        [{ id: 1 }, { id: 2 }],
+        [{ id: 2 }, { id: 3 }],
+        'unique'
+      );
+      expect(result).toHaveLength(3);
+    });
+
+    it('should replace with merge strategy', () => {
+      expect(mergeArrays([1, 2], [3, 4], 'merge')).toEqual([3, 4]);
     });
   });
 
@@ -88,6 +108,35 @@ describe('Deep Merge Utilities', () => {
       const result = deepMerge(target, source, 'append', 'items');
       expect(result).toEqual({ items: [1, 2, 3, 4] });
     });
+
+    it('should return null when source is null', () => {
+      expect(deepMerge({ a: 1 }, null, 'merge', '')).toBeNull();
+    });
+
+    it('should return target when source is undefined', () => {
+      const target = { a: 1 };
+      expect(deepMerge(target, undefined, 'merge', '')).toBe(target);
+    });
+
+    it('should handle type mismatches', () => {
+      const result = deepMerge({ value: 'string' }, { value: { nested: true } }, 'merge', '');
+      expect(result).toEqual({ value: { nested: true } });
+    });
+
+    it('should handle array to non-array', () => {
+      const result = deepMerge({ value: [1, 2] }, { value: 'string' }, 'merge', '');
+      expect(result).toEqual({ value: 'string' });
+    });
+
+    it('should handle non-array to array', () => {
+      const result = deepMerge({ value: 'string' }, { value: [1, 2] }, 'merge', '');
+      expect(result).toEqual({ value: [1, 2] });
+    });
+
+    it('should replace arrays when target is not array', () => {
+      const result = deepMerge('string', [1, 2], 'merge', '');
+      expect(result).toEqual([1, 2]);
+    });
   });
 
   describe('merge', () => {
@@ -105,6 +154,24 @@ describe('Deep Merge Utilities', () => {
 
       const result = merge(target, source);
       expect(result).toEqual({ nested: { a: 1, b: 2 } });
+    });
+
+    it('should use strategy from options', () => {
+      const result = merge(
+        { items: [1, 2] },
+        { items: [3, 4] },
+        { default: 'replace' }
+      );
+      expect(result.items).toEqual([3, 4]);
+    });
+
+    it('should handle replace strategy on objects', () => {
+      const result = merge(
+        { database: { host: 'old', port: 1234 } },
+        { database: { host: 'new' } },
+        { default: 'replace' }
+      );
+      expect(result.database).toEqual({ host: 'new' });
     });
   });
 
@@ -127,6 +194,20 @@ describe('Deep Merge Utilities', () => {
     it('should handle single config', () => {
       const result = mergeConfigs([{ a: 1 }]);
       expect(result).toEqual({ a: 1 });
+    });
+
+    it('should handle null/undefined configs', () => {
+      expect(mergeConfigs(null as any)).toEqual({});
+      expect(mergeConfigs(undefined as any)).toEqual({});
+    });
+
+    it('should deep merge nested objects', () => {
+      const configs = [
+        { database: { host: 'localhost' } },
+        { database: { port: 5432 } },
+      ];
+      const result = mergeConfigs(configs);
+      expect(result.database).toEqual({ host: 'localhost', port: 5432 });
     });
   });
 });
