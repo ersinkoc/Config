@@ -47,5 +47,5 @@ website/node_modules/
 # Playwright MCP
 .playwright-mcp/
 
-# Internal docs (development)
-docs/
+# Internal docs (development - root only)
+/docs/
