@@ -491,8 +491,17 @@ export interface PluginManager {
   /** List registered plugins */
   list(): string[];
 
+  /** List installed plugins */
+  listInstalled(): string[];
+
   /** Get plugin by name */
   get(name: string): ConfigPlugin | undefined;
+
+  /** Check if plugin is registered */
+  has(name: string): boolean;
+
+  /** Check if plugin is installed */
+  isInstalled(name: string): boolean;
 }
 
 /**
@@ -542,4 +551,7 @@ export interface FileSystem {
 
   /** Unwatch file */
   unwatchFile(path: string): void;
+
+  /** Close all watchers */
+  close(): void;
 }

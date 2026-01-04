@@ -13,6 +13,7 @@ import type {
   KernelContext,
   PluginEventHandler,
   FileWatchEvent,
+  FileSystem,
 } from './types.js';
 import type { ConfigPlugin } from './types.js';
 
@@ -28,7 +29,7 @@ export class ConfigKernelImpl implements ConfigKernel {
 
   constructor(context: KernelContext) {
     this.context = context;
-    this.plugins = new PluginManager();
+    this.plugins = new PluginManager(this);
     this.events = new EventBus();
     this.cache = new LRUCache(100, 60000); // 100 entries, 60s TTL
     this.fs = new FileSystemImpl();
@@ -150,9 +151,6 @@ class FileSystemImpl {
 export function createKernel(context: KernelContext): ConfigKernel {
   return new ConfigKernelImpl(context);
 }
-
-// Export types
-export type { ConfigKernelImpl };
 
 // Re-export ConfigKernel type
 export type { ConfigKernel } from './types.js';

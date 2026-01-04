@@ -36,9 +36,16 @@ yarn-error.log*
 # Testing
 .tmp/
 
-# Website build
+# Website
 website/dist/
+website/node_modules/
 
 # Cache
 .cache/
 .parcel-cache/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Internal docs (development)
+docs/

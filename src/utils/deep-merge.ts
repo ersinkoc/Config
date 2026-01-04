@@ -229,14 +229,6 @@ export function mergeConfigs(
 
   for (let i = 0; i < configs.length; i++) {
     const config = configs[i];
-    const nextConfig = configs[i + 1];
-
-    if (!nextConfig) {
-      // Last config, just spread it
-      result = { ...result, ...config };
-      break;
-    }
-
     const strategy = selectStrategy('', strategies);
     result = deepMerge(result, config, strategy, '') as Record<string, unknown>;
   }

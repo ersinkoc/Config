@@ -150,15 +150,16 @@ export function encrypt(
     const key = deriveKey(password, salt.toString('hex'), opts.iterations, opts.keyLength);
 
     // Create cipher
-    const cipher = createCipheriv(opts.algorithm, key, iv, {
-      authTagLength: opts.tagLength,
-    });
+    const cipher = createCipheriv(opts.algorithm, key, iv);
+    // @ts-ignore - Type definitions don't include setAuthTagLength
+    cipher.setAuthTagLength(opts.tagLength);
 
     // Encrypt data
     let encrypted = cipher.update(data, 'utf8', 'hex');
     encrypted += cipher.final('hex');
 
     // Get authentication tag
+    // @ts-ignore - Type definitions don't include getAuthTag
     const tag = cipher.getAuthTag();
 
     // Combine: salt + iv + tag + encrypted data
@@ -227,23 +228,24 @@ export function decrypt(
     const [saltHex, ivHex, tagHex, encrypted] = parts;
 
     // Parse components
-    const salt = Buffer.from(saltHex, 'hex');
-    const iv = Buffer.from(ivHex, 'hex');
-    const tag = Buffer.from(tagHex, 'hex');
+    const salt = Buffer.from(saltHex!, 'hex');
+    const iv = Buffer.from(ivHex!, 'hex');
+    const tag = Buffer.from(tagHex!, 'hex');
 
     // Derive key
-    const key = deriveKey(password, saltHex, opts.iterations, opts.keyLength);
+    const key = deriveKey(password, saltHex!, opts.iterations, opts.keyLength);
 
     // Create decipher
-    const decipher = createDecipheriv(opts.algorithm, key, iv, {
-      authTagLength: opts.tagLength,
-    });
+    const decipher = createDecipheriv(opts.algorithm, key, iv);
+    // @ts-ignore - Type definitions don't include setAuthTagLength
+    decipher.setAuthTagLength(opts.tagLength);
 
     // Set authentication tag
+    // @ts-ignore - Type definitions don't include setAuthTag
     decipher.setAuthTag(tag);
 
     // Decrypt data
-    const part1 = decipher.update(encrypted, 'hex', 'utf8');
+    const part1 = decipher.update(encrypted!, 'hex', 'utf8');
     const part2 = decipher.final('utf8');
 
     return part1 + part2;

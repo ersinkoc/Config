@@ -28,17 +28,40 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
+    "build:watch": "tsup --watch",
+    "build:analyze": "npm run build && npm run size",
+    "clean": "rm -rf dist",
+    "dev": "npm run build:watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm run test:coverage"
+    "size": "node scripts/analyze-bundle.js",
+    "size:limit": "node scripts/check-bundle-size.js",
+    "prepublishOnly": "npm run build && npm run test:coverage",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "release": "npm run build && npm run test && npm run lint && npm run typecheck && npm publish",
+    "release:dry-run": "npm run build && npm run test && npm run typecheck && npm publish --dry-run",
+    "docs:build": "cd website && npm run build",
+    "docs:dev": "cd website && npm run dev",
+    "examples": "npx ts-node examples/01-basic/01-simple-load.ts",
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "ci": "npm run check && npm run test:coverage && npm run size:limit",
+    "perf": "npm run build && node scripts/perf-test.js",
+    "prepare": "husky"
   },
   "keywords": [
     "config",
@@ -68,12 +91,16 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^9.0.0",
+    "husky": "^9.1.7",
     "prettier": "^3.0.0",
+    "terser": "^5.27.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.0.0",
     "vitest": "^2.0.0"
   }
 }

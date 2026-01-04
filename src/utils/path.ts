@@ -15,12 +15,12 @@
  * toPathSegments('plugins[0].name') // ['plugins', '0', 'name']
  * ```
  */
-export function toPathSegments(path: string): (string | number)[] {
+export function toPathSegments(path: string): string[] {
   if (!path || typeof path !== 'string') {
     return [];
   }
 
-  const segments: (string | number)[] = [];
+  const segments: string[] = [];
   let current = '';
   let inBrackets = false;
   let bracketContent = '';
@@ -37,12 +37,7 @@ export function toPathSegments(path: string): (string | number)[] {
       bracketContent = '';
     } else if (char === ']') {
       if (bracketContent) {
-        const index = parseInt(bracketContent, 10);
-        if (!isNaN(index)) {
-          segments.push(index);
-        } else {
-          segments.push(bracketContent);
-        }
+        segments.push(bracketContent);
         bracketContent = '';
       }
       inBrackets = false;
@@ -132,7 +127,9 @@ export function set(obj: unknown, path: string, value: unknown): void {
 
     if (current[segment] == null) {
       const nextSegment = segments[i + 1];
-      current[segment] = typeof nextSegment === 'number' ? [] : {};
+      // Check if next segment is a numeric string (array index)
+      const isNumericIndex = typeof nextSegment === 'string' && /^\d+$/.test(nextSegment);
+      current[segment] = isNumericIndex ? [] : {};
     }
 
     current = current[segment];

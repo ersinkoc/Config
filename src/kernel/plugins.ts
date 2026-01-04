@@ -11,6 +11,11 @@ import { PluginError } from '../errors.js';
 export class PluginManager implements PluginManager {
   private plugins = new Map<string, ConfigPlugin>();
   private installed = new Set<string>();
+  private kernel: ConfigKernel;
+
+  constructor(kernel: ConfigKernel) {
+    this.kernel = kernel;
+  }
 
   /**
    * Registers a plugin without installing it.
@@ -48,14 +53,13 @@ export class PluginManager implements PluginManager {
    * Installs a plugin and its dependencies.
    *
    * @param plugin - Plugin to install
-   * @param kernel - Config kernel instance
    *
    * @example
    * ```typescript
-   * pluginManager.use(myPlugin, kernel);
+   * pluginManager.use(myPlugin);
    * ```
    */
-  use(plugin: ConfigPlugin, kernel: ConfigKernel): void {
+  use(plugin: ConfigPlugin): void {
     // Register plugin if not already registered
     if (!this.plugins.has(plugin.name)) {
       this.register(plugin);
@@ -74,14 +78,14 @@ export class PluginManager implements PluginManager {
           throw new PluginError(`Missing dependency '${depName}' for plugin '${plugin.name}'`, plugin.name);
         }
         if (!this.installed.has(depName)) {
-          this.use(dep, kernel);
+          this.use(dep);
         }
       }
     }
 
     try {
       // Call plugin install method
-      plugin.install(kernel);
+      plugin.install(this.kernel);
       this.installed.add(plugin.name);
     } catch (error: any) {
       throw new PluginError(

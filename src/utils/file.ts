@@ -281,7 +281,7 @@ export async function ensureDir(dirPath: string): Promise<void> {
 export function getExtension(filePath: string): string {
   const normalized = normalize(filePath);
   const parts = normalized.split('.');
-  return parts.length > 1 && parts[parts.length - 1] ? parts[parts.length - 1].toLowerCase() : '';
+  return parts.length > 1 && parts[parts.length - 1] ? parts[parts.length - 1]!.toLowerCase() : '';
 }
 
 /**

@@ -1,0 +1,37 @@
+# Source files
+src/
+tests/
+examples/
+docs/
+website/
+
+# Config files
+.github/
+.husky/
+.playwright-mcp/
+.gitignore
+.eslintrc*
+eslint.config.js
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+
+# Documentation
+*.md
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+.tmp/
+
+# Misc
+*.log
+*.tsbuildinfo
+scripts/
+llms.txt

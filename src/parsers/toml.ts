@@ -236,7 +236,7 @@ class TOMLTokenizer {
   }
 
   private consume(): string {
-    const char = this.content[this.position++];
+    const char = this.content[this.position++] || '\0';
     if (char === '\n') {
       this.line++;
       this.column = 0;
@@ -717,7 +717,7 @@ class TOMLParser {
       let current: Record<string, unknown> = result;
 
       for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
+        const key = keys[i]!;
 
         if (i === keys.length - 1) {
           // Last key, set value
@@ -749,11 +749,11 @@ class TOMLParser {
   }
 
   private peek(): Token {
-    return this.tokens[this.position];
+    return this.tokens[this.position]!;
   }
 
   private consume(): Token {
-    return this.tokens[this.position++];
+    return this.tokens[this.position++]!;
   }
 }
 

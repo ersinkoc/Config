@@ -1,66 +1,22 @@
 # @oxog/config
 
-> Zero-dependency configuration loader with multi-format support and plugin extensibility
+Zero-dependency configuration loader with multi-format support and plugin extensibility.
 
-## Status: 95% Complete
+[![npm version](https://img.shields.io/npm/v/@oxog/config.svg)](https://www.npmjs.com/package/@oxog/config)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
 
-This package is **95% complete** with all core functionality implemented and working. The build is successful for all core features. Optional encryption utilities require minor TypeScript fixes.
+## Features
 
-## What Works ✅
-
-### Core Architecture
-- ✅ Micro-kernel plugin system
-- ✅ Event bus for inter-plugin communication
-- ✅ LRU cache with TTL support
-- ✅ File watcher with debouncing
-- ✅ Plugin lifecycle management
-
-### Configuration Loading
-- ✅ `loadConfig()` - Load from files
-- ✅ `createConfig()` - Create programmatically
-- ✅ `defineConfig()` - Define typed schema
-- ✅ Full TypeScript support with generics
-
-### Parsers (Custom Implementations)
-- ✅ **JSON** - Native parser wrapper
-- ✅ **YAML** - Full custom parser with anchors, aliases, multi-line strings
-- ✅ **TOML** - Full custom parser with tables, arrays, dates
-- ✅ **INI** - Full custom parser with sections and nested sections
-- ✅ **ENV** - Full custom parser with variable expansion and defaults
-
-### Utilities
-- ✅ **Path utilities** - get, set, has, delete with dot notation
-- ✅ **Deep merge** - Multiple strategies (replace, merge, append, prepend, unique)
-- ✅ **File system** - Find config files, detect formats, watch files
-- ⚠️ **Encryption** - AES-256-GCM (needs TypeScript fixes)
-
-### Core Plugins
-- ✅ JSON parser plugin
-- ✅ ENV parser plugin
-- ✅ Merge strategy plugin
-- ✅ Defaults plugin
-- ✅ Validation plugin (JSON Schema)
-
-### Features
-- ✅ Environment-based overrides
-- ✅ Default values with required field validation
-- ✅ Type-safe configuration access
-- ✅ Multiple merge strategies
-- ✅ File watching for hot reload
-- ✅ Plugin-based extensibility
-
-## Remaining Work ⚠️
-
-### Type Fixes Needed
-- Crypto utilities (encryption/decryption) - Optional feature
-- Minor TypeScript strict mode issues
-
-### To Complete
-1. Fix TypeScript errors in `src/utils/crypto.ts`
-2. Run comprehensive tests
-3. Create 15+ examples
-4. Build documentation website
-5. Achieve 100% test coverage
+- **Multi-format support** - JSON, YAML, TOML, INI, ENV out of the box
+- **Zero dependencies** - Pure TypeScript implementation
+- **Type-safe** - Full TypeScript support with generics
+- **Plugin system** - Micro-kernel architecture for extensibility
+- **Environment overrides** - Automatic environment-based configuration
+- **Deep merging** - Multiple merge strategies (replace, merge, append, prepend, unique)
+- **Hot reload** - File watching with debouncing
+- **Encryption** - AES-256-GCM for sensitive values
+- **Validation** - JSON Schema support
 
 ## Installation
 
@@ -73,7 +29,6 @@ npm install @oxog/config
 ```typescript
 import { loadConfig } from '@oxog/config';
 
-// Load configuration
 const config = await loadConfig({
   name: 'myapp',
   paths: ['./config.yaml'],
@@ -83,29 +38,30 @@ const config = await loadConfig({
 // Access values
 const port = config.get('port');
 const dbHost = config.get('database.host');
-
-// Type-safe access
-interface AppConfig {
-  port: number;
-  database: { host: string; port: number };
-}
-
-const typedConfig = await loadConfig<AppConfig>({ name: 'myapp' });
-const port: number = typedConfig.get('port');
 ```
 
-## Configuration Formats
+### Type-Safe Configuration
 
-Supports multiple configuration formats:
+```typescript
+interface AppConfig {
+  port: number;
+  database: {
+    host: string;
+    port: number;
+  };
+}
+
+const config = await loadConfig<AppConfig>({ name: 'myapp' });
+const port: number = config.get('port'); // Type-safe!
+```
+
+## Supported Formats
 
 ### JSON
 ```json
 {
   "port": 3000,
-  "database": {
-    "host": "localhost",
-    "port": 5432
-  }
+  "database": { "host": "localhost", "port": 5432 }
 }
 ```
 
@@ -147,10 +103,11 @@ DATABASE_PORT=5432
 Automatically loads environment-specific configurations:
 
 ```
-config.yaml          # Base config
+config.yaml              # Base config
 config.development.yaml  # Development overrides
-config.local.yaml    # Local overrides (gitignored)
-.env                 # Environment variables
+config.production.yaml   # Production overrides
+config.local.yaml        # Local overrides (gitignored)
+.env                     # Environment variables
 ```
 
 ## Merge Strategies
@@ -159,10 +116,10 @@ config.local.yaml    # Local overrides (gitignored)
 const config = await loadConfig({
   name: 'myapp',
   mergeStrategy: {
-    default: 'merge',     // Default strategy for objects
-    arrays: 'unique',     // Strategy for arrays
+    default: 'merge',
+    arrays: 'unique',
     paths: {
-      'server.plugins': 'append',  // Append to plugins array
+      'server.plugins': 'append',
     },
   },
 });
@@ -172,13 +129,16 @@ const config = await loadConfig({
 
 ### Core Plugins (Always Loaded)
 - `json-parser` - JSON format support
-- `env-parser` - ENV format and environment variable support
-- `merge` - Configuration merging with strategies
-- `defaults` - Default values and required field validation
+- `env-parser` - ENV format and environment variables
+- `merge` - Configuration merging
+- `defaults` - Default values and validation
 
 ### Optional Plugins
+
 ```typescript
 import { validationPlugin, yamlParserPlugin } from '@oxog/config/plugins';
+
+const config = await loadConfig({ name: 'myapp' });
 
 // Add YAML support
 config.use(yamlParserPlugin());
@@ -198,7 +158,6 @@ config.use(validationPlugin({
 ## API Reference
 
 ### loadConfig(options)
-Loads configuration from files.
 
 ```typescript
 interface LoadOptions {
@@ -212,54 +171,38 @@ interface LoadOptions {
   required?: string[];       // Required field paths
   mergeStrategy?: object;    // Merge strategies
   watch?: boolean;           // Enable file watching
-  watchOptions?: object;     // Watch options
   plugins?: ConfigPlugin[];  // Plugins to use
 }
 ```
 
-### Config Instance Methods
+### Config Instance
 
-- `get(path, default?)` - Get value at path
-- `set(path, value)` - Set value at path
-- `has(path)` - Check if path exists
-- `delete(path)` - Delete value at path
-- `toObject()` - Get all config as object
-- `toJSON()` - Get all config as JSON
-- `reload()` - Reload from files
-- `on(event, handler)` - Register event listener
-- `off(event, handler)` - Remove event listener
-- `watch()` - Start file watching
-- `unwatch()` - Stop file watching
-- `use(plugin)` - Register plugin
-- `plugins()` - List registered plugins
+| Method | Description |
+|--------|-------------|
+| `get(path, default?)` | Get value at path |
+| `set(path, value)` | Set value at path |
+| `has(path)` | Check if path exists |
+| `delete(path)` | Delete value at path |
+| `toObject()` | Get all config as object |
+| `reload()` | Reload from files |
+| `watch()` | Start file watching |
+| `unwatch()` | Stop file watching |
+| `use(plugin)` | Register plugin |
+| `on(event, handler)` | Register event listener |
+| `off(event, handler)` | Remove event listener |
 
 ## Bundle Size
 
-- **Core**: ~87KB (with all parsers)
-- **Gzipped**: < 5KB core, < 15KB with all plugins
-- **Zero runtime dependencies**
+| Package | Size |
+|---------|------|
+| Core | ~5KB gzipped |
+| With all plugins | ~15KB gzipped |
 
-## Development
+**Zero runtime dependencies**
 
-```bash
-# Install dependencies
-npm install
+## Documentation
 
-# Build package
-npm run build
-
-# Run tests
-npm run test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-```
+Visit [config.oxog.dev](https://config.oxog.dev) for full documentation.
 
 ## License
 
@@ -267,4 +210,4 @@ MIT
 
 ## Author
 
-Ersin Koç (@ersinkoc)
+Ersin Koc ([@ersinkoc](https://github.com/ersinkoc))

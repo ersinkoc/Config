@@ -282,7 +282,7 @@ export class ConfigImpl<T = unknown> implements Config<T> {
    * ```
    */
   use(plugin: import('./types.js').ConfigPlugin): void {
-    this.kernel.plugins.use(plugin, this.kernel);
+    this.kernel.plugins.use(plugin);
   }
 
   /**

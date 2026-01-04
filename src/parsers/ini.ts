@@ -41,7 +41,7 @@ class INIParser implements ConfigParser {
 
       for (let i = 0; i < lines.length; i++) {
         const lineNum = i + 1;
-        let line = lines[i];
+        let line = lines[i] || '';
 
         // Remove leading/trailing whitespace
         const trimmedLine = line.trim();
@@ -98,8 +98,8 @@ class INIParser implements ConfigParser {
             this.setValue(result, currentSection, currentKey, currentValue);
           }
 
-          const key = line.substring(0, equalsIndex).trim();
-          let value = line.substring(equalsIndex + 1).trim();
+          const key = line!.substring(0, equalsIndex).trim();
+          let value = line!.substring(equalsIndex + 1).trim();
 
           // Remove inline comment
           const commentIndex = value.indexOf(';');
@@ -124,14 +124,14 @@ class INIParser implements ConfigParser {
           isInValue = true;
         } else if (isInValue && currentKey) {
           // We're in the middle of a multi-line value
-          currentValue += '\n' + line;
+          currentValue += '\n' + line!;
         } else {
           // Invalid line
           throw new ParseError(
             `Invalid line: expected key=value pair`,
             file,
             lineNum,
-            line.length
+            line!.length
           );
         }
       }

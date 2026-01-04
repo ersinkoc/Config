@@ -34,11 +34,13 @@ class ENVParser implements ConfigParser {
     try {
       const lines = content.split(/\r?\n/);
       const result: Record<string, unknown> = {};
-      const env = { ...(envVars || process.env), ...result };
+      const env: Record<string, string> = Object.fromEntries(
+        Object.entries(envVars || process.env).filter(([, v]) => v !== undefined)
+      ) as Record<string, string>;
 
       for (let i = 0; i < lines.length; i++) {
         const lineNum = i + 1;
-        let line = lines[i];
+        let line = lines[i] || '';
 
         // Skip empty lines
         if (!line.trim()) {
@@ -46,31 +48,31 @@ class ENVParser implements ConfigParser {
         }
 
         // Skip comments
-        const trimmed = line.trim();
+        const trimmed = line!.trim();
         if (trimmed.startsWith('#')) {
           continue;
         }
 
         // Handle export statements
-        let keyValueLine = line;
+        let keyValueLine = line!;
         if (trimmed.startsWith('export ')) {
           keyValueLine = trimmed.substring(7).trim();
         }
 
         // Parse key-value pair
-        const equalsIndex = keyValueLine.indexOf('=');
+        const equalsIndex = keyValueLine!.indexOf('=');
         if (equalsIndex === -1) {
           // Invalid line
           throw new ParseError(
             `Invalid line: expected key=value pair`,
             file,
             lineNum,
-            line.length
+            line!.length
           );
         }
 
-        const key = keyValueLine.substring(0, equalsIndex).trim();
-        let value = keyValueLine.substring(equalsIndex + 1).trim();
+        const key = keyValueLine!.substring(0, equalsIndex).trim();
+        let value = keyValueLine!.substring(equalsIndex + 1).trim();
 
         // Remove inline comments (but not in quoted strings)
         if (!((value.startsWith('"') && value.includes('"')) ||

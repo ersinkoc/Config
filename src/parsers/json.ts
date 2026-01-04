@@ -39,7 +39,7 @@ class JSONParser implements ConfigParser {
         const position = parseInt(match[1], 10);
         const lines = content.substring(0, position).split('\n');
         const line = lines.length;
-        const column = lines[lines.length - 1].length + 1;
+        const column = lines[lines.length - 1]!.length + 1;
 
         throw new ParseError(`Invalid JSON: ${message}`, file, line, column);
       }

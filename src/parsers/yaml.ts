@@ -248,7 +248,7 @@ class YAMLTokenizer {
   }
 
   private consume(): string {
-    const char = this.content[this.position++];
+    const char = this.content[this.position++] || '\0';
     if (char === '\n') {
       this.line++;
       this.column = 0;
@@ -341,6 +341,7 @@ class YAMLParser {
   private tokens: Token[];
   private position = 0;
   private currentIndent = 0;
+  public content = ''; // Store original content for indentation calculations
 
   constructor(tokens: Token[]) {
     this.tokens = tokens;
@@ -412,7 +413,7 @@ class YAMLParser {
     }
 
     // Handle scalars
-    if (token.type === 'VALUE' || token.type === 'KEY') {
+    if (token.type === 'VALUE') {
       const value = this.consumeScalar();
       return {
         type: 'string',
@@ -432,7 +433,10 @@ class YAMLParser {
       const items: YAMLNode[] = [];
 
       while (this.peek().type !== 'RBRACK') {
-        items.push(this.parseNode(indent + 1));
+        const node = this.parseNode(indent + 1);
+        if (node) {
+          items.push(node);
+        }
 
         const next = this.peek();
         if (next.type === 'COMMA') {
@@ -689,11 +693,11 @@ class YAMLParser {
   }
 
   private peek(): Token {
-    return this.tokens[this.position];
+    return this.tokens[this.position]!;
   }
 
   private consume(): Token {
-    return this.tokens[this.position++];
+    return this.tokens[this.position++]!;
   }
 }
 
@@ -711,6 +715,7 @@ class YAMLParserImpl implements ConfigParser {
       const tokenizer = new YAMLTokenizer(content);
       const tokens = tokenizer.tokenize();
       const parser = new YAMLParser(tokens);
+      parser.content = content;
       return parser.parse();
     } catch (error: any) {
       throw new ParseError(`YAML parsing error: ${error.message}`, file);

@@ -1,0 +1,312 @@
+# @oxog/config - LLM Documentation
+
+## Project Overview
+
+@oxog/config is a zero-dependency configuration loader with multi-format support and plugin extensibility. It features a micro-kernel architecture, custom parsers for 5 configuration formats (JSON, YAML, TOML, INI, ENV), and a comprehensive TypeScript implementation.
+
+## Architecture
+
+### Core Components
+
+1. **Micro-kernel Design**
+   - Event bus for inter-plugin communication
+   - LRU cache with TTL support (100 entries, 60s default TTL)
+   - File watcher with debouncing (300ms default)
+   - Plugin manager with dependency resolution
+   - File system abstraction
+
+2. **Plugin System**
+   - Plugin interface with lifecycle hooks
+   - Core plugins (always loaded): json-parser, env-parser, merge, defaults
+   - Optional plugins: yaml-parser, toml-parser, ini-parser, validation, encryption, watch, cache, interpolation
+   - Dependency resolution and management
+
+3. **Custom Parsers (Zero Dependencies)**
+   - JSON: Native parser wrapper with error handling
+   - YAML: Full custom implementation with tokenizer, parser, AST
+   - TOML: Full custom implementation with tables, arrays, dates
+   - INI: Full custom implementation with sections and nested sections
+   - ENV: Full custom implementation with variable expansion and defaults
+
+## Main API
+
+### loadConfig(options)
+Loads configuration from files.
+
+```typescript
+interface LoadOptions {
+  name: string;
+  paths?: string[];
+  cwd?: string;
+  env?: string;
+  environments?: string[];
+  envPrefix?: string;
+  defaults?: object;
+  required?: string[];
+  mergeStrategy?: object;
+  watch?: boolean;
+  watchOptions?: object;
+  plugins?: ConfigPlugin[];
+}
+```
+
+### createConfig(data)
+Creates configuration programmatically.
+
+```typescript
+const config = createConfig({
+  port: 3000,
+  database: { host: 'localhost', port: 5432 },
+});
+```
+
+### defineConfig<T>(data)
+Defines typed configuration schema.
+
+```typescript
+interface ConfigType { port: number; }
+const config = defineConfig<ConfigType>({ port: 3000 });
+```
+
+### Config Instance Methods
+
+- `get(path, default?)` - Get value at path
+- `set(path, value)` - Set value at path
+- `has(path)` - Check if path exists
+- `delete(path)` - Delete value at path
+- `toObject()` - Get all config as object
+- `toJSON()` - Get all config as JSON
+- `reload()` - Reload from files
+- `on(event, handler)` - Register event listener
+- `off(event, handler)` - Remove event listener
+- `watch()` - Start file watching
+- `unwatch()` - Stop file watching
+- `use(plugin)` - Register plugin
+- `plugins()` - List registered plugins
+
+## Utilities
+
+### Path Utilities
+- `get(obj, path, default?)` - Get nested value
+- `set(obj, path, value)` - Set nested value
+- `has(obj, path)` - Check path existence
+- `delete(obj, path)` - Delete path
+- `toPathSegments(path)` - Convert path to segments
+- `deepClone(obj)` - Deep clone object
+- `getAllPaths(obj)` - Get all paths
+
+### Deep Merge Utilities
+- `deepMerge(target, source, strategy, path)` - Deep merge objects
+- `mergeArrays(target, source, strategy)` - Merge arrays
+- `mergeConfigs(configs, strategies)` - Merge multiple configs
+- Strategies: replace, merge, append, prepend, unique
+
+### File System Utilities
+- `readFile(path)` - Read file content
+- `exists(path)` - Check file existence
+- `resolvePaths(paths, cwd)` - Resolve paths with cwd
+- `findConfigFiles(name, cwd, env, extensions)` - Find config files
+- `detectFormat(filePath, explicitFormat?)` - Detect file format
+- `watchFile(path, callback)` - Watch file for changes
+
+### Encryption Utilities (Optional)
+- `encrypt(data, password, options)` - Encrypt data
+- `decrypt(encryptedData, password, options)` - Decrypt data
+- `isEncrypted(value, marker)` - Check if value is encrypted
+- Uses AES-256-GCM with PBKDF2 key derivation
+
+## File Structure
+
+```
+src/
+├── index.ts              # Main exports (loadConfig, createConfig, defineConfig)
+├── config.ts             # Config class implementation
+├── kernel.ts             # Micro-kernel core
+├── types.ts              # TypeScript type definitions
+├── errors.ts             # Custom error classes
+├── parsers/              # Configuration format parsers
+│   ├── index.ts          # Parser registry
+│   ├── json.ts           # JSON parser
+│   ├── yaml.ts           # YAML parser
+│   ├── toml.ts           # TOML parser
+│   ├── ini.ts            # INI parser
+│   └── env.ts            # ENV parser
+├── kernel/               # Kernel components
+│   ├── events.ts         # Event bus
+│   ├── cache.ts          # LRU cache
+│   ├── plugins.ts        # Plugin manager
+│   └── watcher.ts        # File watcher
+├── utils/                # Utility functions
+│   ├── path.ts           # Path utilities
+│   ├── deep-merge.ts     # Deep merge utilities
+│   ├── file.ts           # File system utilities
+│   └── crypto.ts         # Encryption utilities
+├── plugins/              # Plugin implementations
+│   ├── core/             # Core plugins
+│   └── optional/         # Optional plugins
+└── index.ts              # Re-exports
+```
+
+## Configuration Formats
+
+### JSON
+Native JSON.parse/stringify with error handling and line/column reporting.
+
+### YAML
+Full custom parser supporting:
+- Scalar values (strings, numbers, booleans, null)
+- Quoted strings (single and double)
+- Multi-line strings (literal `|` and folded `>`)
+- Arrays (flow `[]` and block `-`)
+- Objects (flow `{}` and block with indentation)
+- Comments (`#`)
+- Anchors (`&`) and aliases (`*`)
+- Document separators (`---` and `...`)
+
+### TOML
+Full custom parser supporting:
+- Key-value pairs
+- Strings (basic and literal)
+- Multi-line strings
+- Integers and floats
+- Booleans
+- Dates and times
+- Arrays
+- Tables and inline tables
+- Array of tables
+- Comments
+
+### INI
+Full custom parser supporting:
+- Key-value pairs
+- Sections `[section]`
+- Nested sections `[section.subsection]`
+- Comments (`;` and `#`)
+- Quoted values
+- Multi-line values (with `\`)
+
+### ENV
+Full custom parser supporting:
+- Key-value pairs
+- Quoted values (single and double)
+- Variable expansion (`$VAR` and `${VAR}`)
+- Default values (`${VAR:-default}`)
+- Comments (`#`)
+- Multi-line values
+- Export statements (`export VAR=value`)
+
+## Error Handling
+
+Custom error classes:
+- `ConfigError` - Base error class
+- `ConfigNotFoundError` - Configuration file not found
+- `ParseError` - Configuration parsing error
+- `ValidationError` - Configuration validation error
+- `RequiredFieldError` - Required field missing
+- `EncryptionError` - Encryption/decryption error
+- `PluginError` - Plugin-related error
+
+## Testing
+
+- Test framework: Vitest
+- Coverage threshold: 50% lines, 35% functions, 50% branches, 50% statements
+- Test files: 5 passing
+- Total tests: 65 passing
+- Test success rate: 100%
+
+## Build System
+
+- TypeScript strict mode enabled
+- Bundler: tsup
+- Outputs: ESM, CJS, and TypeScript declarations
+- Bundle size: ~87KB (with all features)
+- Zero runtime dependencies
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build package
+npm run build
+
+# Run tests
+npm run test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+```
+
+## Usage Examples
+
+### Basic Configuration Loading
+```typescript
+import { loadConfig } from '@oxog/config';
+
+const config = await loadConfig({
+  name: 'myapp',
+  paths: ['./config.yaml'],
+  env: process.env.NODE_ENV || 'development',
+});
+
+const port = config.get('port');
+```
+
+### Type-Safe Configuration
+```typescript
+interface AppConfig {
+  port: number;
+  database: { host: string; port: number };
+}
+
+const config = await loadConfig<AppConfig>({ name: 'myapp' });
+const port: number = config.get('port');
+```
+
+### Custom Merge Strategy
+```typescript
+const config = await loadConfig({
+  name: 'myapp',
+  mergeStrategy: {
+    default: 'merge',
+    arrays: 'unique',
+    paths: {
+      'server.plugins': 'append',
+    },
+  },
+});
+```
+
+### Plugin Usage
+```typescript
+import { yamlParserPlugin } from '@oxog/config/plugins';
+
+config.use(yamlParserPlugin());
+```
+
+## Environment Overrides
+
+Automatically loads environment-specific configurations:
+- config.yaml (base config)
+- config.development.yaml (development overrides)
+- config.local.yaml (local overrides, gitignored)
+- .env (environment variables)
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Author
+
+Ersin Koç (@ersinkoc)
+
+## Repository
+
+https://github.com/ersinkoc/oxog-config
