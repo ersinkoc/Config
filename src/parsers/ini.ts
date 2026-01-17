@@ -53,6 +53,12 @@ class INIParser implements ConfigParser {
 
         // Check for section header
         if (trimmedLine.startsWith('[')) {
+          // Save previous value before switching sections
+          if (isInValue && currentKey) {
+            this.setValue(result, currentSection, currentKey, currentValue);
+            isInValue = false;
+          }
+
           // Handle nested sections with dot notation
           const endBracket = trimmedLine.indexOf(']');
           if (endBracket === -1) {
@@ -67,7 +73,6 @@ class INIParser implements ConfigParser {
           const sectionName = trimmedLine.substring(1, endBracket).trim();
           currentSection = sectionName;
           currentKey = null;
-          isInValue = false;
 
           // Ensure section exists in result
           let target = result;

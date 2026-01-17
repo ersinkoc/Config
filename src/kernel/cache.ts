@@ -70,15 +70,18 @@ export class LRUCache implements Cache {
    * ```
    */
   set(key: string, value: unknown): void {
-    // Remove oldest entries if at capacity
+    // Only evict if at capacity and adding a new key
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       this.evictOldest();
     }
 
+    // Get current entry to preserve access time if updating
+    const currentEntry = this.cache.get(key);
+
     this.cache.set(key, {
       value,
       timestamp: Date.now(),
-      accessCount: 0,
+      accessCount: currentEntry?.accessCount || 0,
       lastAccessed: Date.now(),
     });
   }

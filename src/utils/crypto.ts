@@ -149,10 +149,8 @@ export function encrypt(
     // Derive key from password
     const key = deriveKey(password, salt.toString('hex'), opts.iterations, opts.keyLength);
 
-    // Create cipher
-    const cipher = createCipheriv(opts.algorithm, key, iv);
-    // @ts-ignore - Type definitions don't include setAuthTagLength
-    cipher.setAuthTagLength(opts.tagLength);
+    // Create cipher (GCM mode default tag length is 16 bytes)
+    const cipher = createCipheriv(opts.algorithm as any, key, iv);
 
     // Encrypt data
     let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -165,12 +163,12 @@ export function encrypt(
     // Combine: salt + iv + tag + encrypted data
     const result = `${salt.toString('hex')}:${iv.toString('hex')}:${tag.toString('hex')}:${encrypted}`;
 
-    // Encode based on option
+    // Encode based on option (encode the colon-separated result string)
     let encoded: string;
     if (opts.encoding === 'base64') {
-      encoded = Buffer.from(result, 'hex').toString('base64');
+      encoded = Buffer.from(result).toString('base64');
     } else {
-      encoded = Buffer.from(result, 'hex').toString('hex');
+      encoded = result; // Already in hex format with colons
     }
 
     // Add marker
@@ -214,10 +212,10 @@ export function decrypt(
     // Remove marker
     const encoded = encryptedData.slice(opts.marker.length);
 
-    // Decode
+    // Decode (get back the colon-separated hex string)
     const hexData = opts.encoding === 'base64'
-      ? Buffer.from(encoded, 'base64').toString('hex')
-      : Buffer.from(encoded, 'hex').toString('hex');
+      ? Buffer.from(encoded, 'base64').toString('utf8')
+      : encoded; // Already in colon-separated hex format
 
     // Split: salt:iv:tag:encrypted
     const parts = hexData.split(':');
@@ -235,10 +233,8 @@ export function decrypt(
     // Derive key
     const key = deriveKey(password, saltHex!, opts.iterations, opts.keyLength);
 
-    // Create decipher
-    const decipher = createDecipheriv(opts.algorithm, key, iv);
-    // @ts-ignore - Type definitions don't include setAuthTagLength
-    decipher.setAuthTagLength(opts.tagLength);
+    // Create decipher (GCM mode default tag length is 16 bytes)
+    const decipher = createDecipheriv(opts.algorithm as any, key, iv);
 
     // Set authentication tag
     // @ts-ignore - Type definitions don't include setAuthTag

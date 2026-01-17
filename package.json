@@ -38,10 +38,10 @@
     "build:analyze": "npm run build && npm run size",
     "clean": "rm -rf dist",
     "dev": "npm run build:watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:watchAll": "jest --watchAll",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write .",
@@ -92,15 +92,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^9.0.0",
     "husky": "^9.1.7",
+    "jest": "^30.2.0",
     "prettier": "^3.0.0",
     "terser": "^5.27.0",
+    "ts-jest": "^29.4.6",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "typescript-eslint": "^8.0.0",
-    "vitest": "^2.0.0"
+    "typescript-eslint": "^8.0.0"
   }
 }

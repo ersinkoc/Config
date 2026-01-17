@@ -4,7 +4,7 @@
 
 import { readFile as fsReadFile, stat as fsStat } from 'node:fs/promises';
 import { existsSync, watch as fsWatch } from 'node:fs';
-import { dirname, join, normalize, resolve } from 'node:path';
+import { dirname, join, normalize, resolve, isAbsolute as pathIsAbsolute } from 'node:path';
 import type { ConfigParser } from '../types.js';
 import { ConfigNotFoundError, ParseError } from '../errors.js';
 
@@ -177,7 +177,9 @@ export function detectFormat(
     return explicitFormat.toLowerCase();
   }
 
-  const ext = normalize(filePath).split('.').pop()?.toLowerCase();
+  // Remove query parameters before extracting extension
+  const pathWithoutQuery = filePath.split('?')[0];
+  const ext = normalize(pathWithoutQuery || '').split('.').pop()?.toLowerCase();
 
   switch (ext) {
     case 'yaml':
@@ -259,10 +261,14 @@ export async function ensureDir(dirPath: string): Promise<void> {
   try {
     await fsStat(dirPath);
   } catch {
-    await fsStat(dirname(dirPath)).then(
-      () => Promise.reject(new Error(`Parent directory does not exist: ${dirPath}`)),
-      () => Promise.resolve()
-    );
+    // If the directory doesn't exist, check if parent exists
+    try {
+      await fsStat(dirname(dirPath));
+      // Parent exists, so we could create the directory (but we just verify)
+    } catch {
+      // Parent doesn't exist either, throw error
+      throw new Error(`Parent directory does not exist: ${dirPath}`);
+    }
   }
 }
 
@@ -297,7 +303,9 @@ export function getExtension(filePath: string): string {
  * ```
  */
 export function isAbsolute(path: string): boolean {
-  return normalize(path).startsWith('/') || /^[a-zA-Z]:\\/.test(normalize(path));
+  // Use Node.js path.isAbsolute for platform-specific check
+  // Also check for Unix-style paths on Windows (starting with /)
+  return pathIsAbsolute(path) || path.startsWith('/');
 }
 
 /**

@@ -36,10 +36,9 @@ export function toPathSegments(path: string): string[] {
       inBrackets = true;
       bracketContent = '';
     } else if (char === ']') {
-      if (bracketContent) {
-        segments.push(bracketContent);
-        bracketContent = '';
-      }
+      // Always push bracket content, even if empty (for empty brackets [])
+      segments.push(bracketContent);
+      bracketContent = '';
       inBrackets = false;
     } else if (char === '.' && !inBrackets) {
       if (current) {
@@ -279,6 +278,20 @@ export function getAllPaths(obj: unknown, prefix = ''): string[] {
     return paths;
   }
 
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    obj.forEach((item, index) => {
+      const path = prefix ? `${prefix}[${index}]` : `[${index}]`;
+      if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+        paths.push(...getAllPaths(item, path));
+      } else {
+        paths.push(path);
+      }
+    });
+    return paths;
+  }
+
+  // Handle objects
   for (const key in obj) {
     if (!obj.hasOwnProperty(key)) {
       continue;
@@ -287,8 +300,18 @@ export function getAllPaths(obj: unknown, prefix = ''): string[] {
     const value = (obj as Record<string, unknown>)[key];
     const path = prefix ? `${prefix}.${key}` : key;
 
-    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      paths.push(...getAllPaths(value, path));
+    if (value !== null && typeof value === 'object') {
+      if (Array.isArray(value)) {
+        // Check if array contains objects (non-leaf)
+        const hasObjects = value.some(item => item !== null && typeof item === 'object' && !Array.isArray(item));
+        if (hasObjects) {
+          paths.push(...getAllPaths(value, path));
+        } else {
+          paths.push(path);
+        }
+      } else {
+        paths.push(...getAllPaths(value, path));
+      }
     } else {
       paths.push(path);
     }

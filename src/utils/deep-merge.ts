@@ -90,7 +90,19 @@ export function mergeArrays(
         }
       }
 
-      return result;
+      // Also remove duplicates within source itself
+      const finalResult: unknown[] = [];
+      for (const item of result) {
+        const isFinalDuplicate = finalResult.some(
+          (existing) =>
+            JSON.stringify(existing) === JSON.stringify(item)
+        );
+        if (!isFinalDuplicate) {
+          finalResult.push(item);
+        }
+      }
+
+      return finalResult;
 
     default:
       // For 'merge' strategy on arrays, fall back to replace
@@ -105,6 +117,7 @@ export function mergeArrays(
  * @param source - Source value
  * @param strategy - Merge strategy
  * @param path - Current path (for error reporting)
+ * @param strategies - Optional strategy options for array handling
  * @returns Merged value
  *
  * @example
@@ -118,7 +131,8 @@ export function deepMerge(
   target: unknown,
   source: unknown,
   strategy: MergeStrategy,
-  path: string
+  path: string,
+  strategies?: MergeStrategyOptions
 ): unknown {
   // If source is null, use source (allows nulling values)
   if (source === null) {
@@ -128,6 +142,11 @@ export function deepMerge(
   // If source is undefined, return target
   if (source === undefined) {
     return target;
+  }
+
+  // Handle Date instances specially
+  if (source instanceof Date) {
+    return new Date(source.getTime());
   }
 
   // Handle primitive types (replace strategy)
@@ -149,7 +168,15 @@ export function deepMerge(
     }
 
     // Both are arrays, merge based on strategy
-    return mergeArrays(target as unknown[], source, strategy);
+    // Check path-specific strategy first, then arrays strategy, then current strategy
+    let arrayStrategy = strategy;
+    if (strategies?.paths && path in strategies.paths) {
+      const pathStrategy = strategies.paths[path];
+      if (pathStrategy) arrayStrategy = pathStrategy;
+    } else if (strategies?.arrays) {
+      arrayStrategy = strategies.arrays;
+    }
+    return mergeArrays(target as unknown[], source, arrayStrategy);
   }
 
   // Handle objects
@@ -189,7 +216,7 @@ export function deepMerge(
     }
 
     // Both have the key, recursively merge
-    result[key] = deepMerge(targetValue, sourceValue, strategy, currentPath);
+    result[key] = deepMerge(targetValue, sourceValue, strategy, currentPath, strategies);
   }
 
   return result;
@@ -230,7 +257,7 @@ export function mergeConfigs(
   for (let i = 0; i < configs.length; i++) {
     const config = configs[i];
     const strategy = selectStrategy('', strategies);
-    result = deepMerge(result, config, strategy, '') as Record<string, unknown>;
+    result = deepMerge(result, config, strategy, '', strategies) as Record<string, unknown>;
   }
 
   return result;
@@ -257,5 +284,5 @@ export function merge(
   strategies?: MergeStrategyOptions
 ): Record<string, unknown> {
   const strategy = selectStrategy('', strategies);
-  return deepMerge(target, source, strategy, '') as Record<string, unknown>;
+  return deepMerge(target, source, strategy, '', strategies) as Record<string, unknown>;
 }

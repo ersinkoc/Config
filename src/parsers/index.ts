@@ -84,8 +84,28 @@ export class ParserRegistry {
    * ```
    */
   detect(filePath: string): ConfigParser | undefined {
-    const extension = '.' + filePath.split('.').pop()?.toLowerCase();
-    return this.get(extension);
+    // Remove query string if present
+    const pathWithoutQuery = filePath.split('?')[0];
+
+    // Try to match the longest known extension first (for cases like .tar.gz)
+    const knownExtensions = Array.from(this.parsers.keys()).sort(
+      (a, b) => b.length - a.length
+    );
+
+    for (const ext of knownExtensions) {
+      if (pathWithoutQuery.toLowerCase().endsWith(ext)) {
+        return this.get(ext);
+      }
+    }
+
+    // Fallback to getting extension after last dot
+    const lastDotIndex = pathWithoutQuery.lastIndexOf('.');
+    if (lastDotIndex > 0) {
+      const extension = pathWithoutQuery.slice(lastDotIndex);
+      return this.get(extension.toLowerCase());
+    }
+
+    return undefined;
   }
 
   /**
